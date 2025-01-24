@@ -1,0 +1,8 @@
+[Unit]
+Description=Docker Backup
+
+[Timer]
+OnCalendar=Mon..Fri 22:00
+
+[Install]
+WantedBy=timers.target

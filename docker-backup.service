@@ -1,10 +1,8 @@
 [Unit]
-Description=Docker Backup
-After=network-online.target
-Wants=network-online.target
+Description=Docker Volume Backup
+After=network.target
 
 [Service]
-ExecStart=/bin/sh -c '/root/backup_docker.sh'
-
-[Install]
-WantedBy=default.target
+ExecStart=/root/backup_docker.sh
+User=root
+Type=oneshot

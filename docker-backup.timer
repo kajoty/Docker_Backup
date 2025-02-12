@@ -1,8 +1,9 @@
 [Unit]
-Description=Docker Backup
+Description=Automatisches Docker-Backup
 
 [Timer]
-OnCalendar=Mon..Fri 22:00
+OnCalendar=*-*-* 02:00:00
+Persistent=true
 
 [Install]
 WantedBy=timers.target

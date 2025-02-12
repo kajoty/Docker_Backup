@@ -1,31 +1,51 @@
-Quelle:
-https://schroederdennis.de/docker/docker-volume-backup-script-sichern-mit-secure-copy-scp-nas/
+# 🐳 Docker Volume Backup Script
 
-Damit das Script auch ohne Benutzereingaben läuft, muss der Public Key vom Hauptsystem auf das Zielsystem kopiert werden. Damit ist dann auch eine Passwortlose-Anmeldung möglich. Also zunächst ein Keypärchen erstellen und dann den Public Key kopieren.
+Dieses Skript erstellt ein Backup von Docker-Volumes und kopiert das Archiv automatisch auf einen entfernten Server. Es ermöglicht eine automatisierte Sicherung mithilfe von `systemd` und funktioniert ohne Benutzereingaben durch die Einrichtung eines passwortlosen SSH-Logins.  
 
-## Auf dem Hauptsystem ausführen, nicht dem Backup Ziel ##
-ssh-keygen -t rsa
-ssh-copy-id root@Ziel-IP
+---
 
+## 📌 Inhalt
+- [🔧 Voraussetzungen](#-voraussetzungen)
+- [⚙️ Installation & Konfiguration](#️-installation--konfiguration)
+- [🔑 Passwortlosen SSH-Login einrichten](#-passwortlosen-ssh-login-einrichten)
+- [📜 Backup-Skript (`backup_docker.sh`)](#-backup-skript-backup_dockersh)
+- [⏳ Automatisierung mit Systemd (`.service` & `.timer`)](#-automatisierung-mit-systemd-service--timer)
+- [🛠 Befehle zur Verwaltung](#-befehle-zur-verwaltung)
+- [🗑️ Aufräumen alter Backups](#-aufräumen-alter-backups)
+- [📢 Zusammenfassung](#-zusammenfassung)
 
-## Wenn du den Passwortlosen-Login testen möchtest gebe folgendes in die CLI ein
+---
 
-ssh root@Ziel-IP
+## 🔧 Voraussetzungen
+Bevor du das Skript verwendest, stelle sicher, dass folgende Voraussetzungen erfüllt sind:
 
-## .service und .timer 
+✅ **Docker** ist installiert und läuft  
+✅ **SSH & SCP** sind auf dem Haupt- und Zielsystem verfügbar  
+✅ **Systemd** wird auf dem Hauptsystem genutzt  
+✅ **SSH-Key-Pair** wurde eingerichtet (siehe nächster Abschnitt)  
 
-Müssen "root" gehören
+---
 
-docker-backup.service & docker-backup.timer liegen unter:
+## ⚙️ Installation & Konfiguration
 
- /etc/systemd/system/
+### 📁 Dateien & Verzeichnisse
+| Datei/Verzeichnis        | Zweck |
+|--------------------------|------------------------------------------------|
+| `/root/backup_docker.sh` | Das eigentliche Backup-Skript |
+| `/etc/systemd/system/docker-backup.service` | Systemd Service-Datei für das Backup |
+| `/etc/systemd/system/docker-backup.timer` | Systemd Timer-Datei zur Automatisierung |
 
- systemctl daemon-reload
- 
- systemctl status/start/stop/restart docker-backup.timer
+### 🔑 Berechtigungen setzen
+```
+bash
+chmod +x /root/backup_docker.sh
+chown root:root /root/backup_docker.sh
+```
 
- systemctl status/start/stop/restart docker-backup.service
+## Systemd-Konfiguration neu laden
 
-## backup_docker.sh
+´´´
+systemctl daemon-reload
+´´´
 
-liegt unter /root
+Passwortlosen SSH-Login einrichten

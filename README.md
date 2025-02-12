@@ -1,51 +1,82 @@
-# 🐳 Docker Volume Backup Script
+Docker Volume Backup Script
+Dieses Skript erstellt ein Backup von Docker-Volumes und speichert es lokal oder auf einem entfernten Server. Es kann automatisiert mit einem systemd Timer ausgeführt werden.
 
-Dieses Skript erstellt ein Backup von Docker-Volumes und kopiert das Archiv automatisch auf einen entfernten Server. Es ermöglicht eine automatisierte Sicherung mithilfe von `systemd` und funktioniert ohne Benutzereingaben durch die Einrichtung eines passwortlosen SSH-Logins.  
+🔧 Voraussetzungen
+Ein Linux-System mit Docker installiert
+Ein Benutzer mit ausreichenden Berechtigungen
+SSH-Zugriff auf das Zielsystem für den Remote-Backup
 
----
+🔑 SSH-Login ohne Passwort einrichten
+Damit das Skript ohne Benutzereingaben funktioniert, muss der SSH-Schlüssel vom Hauptsystem auf das Zielsystem kopiert werden.
 
-## 📌 Inhalt
-- [🔧 Voraussetzungen](#-voraussetzungen)
-- [⚙️ Installation & Konfiguration](#️-installation--konfiguration)
-- [🔑 Passwortlosen SSH-Login einrichten](#-passwortlosen-ssh-login-einrichten)
-- [📜 Backup-Skript (`backup_docker.sh`)](#-backup-skript-backup_dockersh)
-- [⏳ Automatisierung mit Systemd (`.service` & `.timer`)](#-automatisierung-mit-systemd-service--timer)
-- [🛠 Befehle zur Verwaltung](#-befehle-zur-verwaltung)
-- [🗑️ Aufräumen alter Backups](#-aufräumen-alter-backups)
-- [📢 Zusammenfassung](#-zusammenfassung)
+1️⃣ SSH-Schlüsselpaar erstellen (falls noch nicht vorhanden)
+```bash
 
----
+ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/id_rsa
 
-## 🔧 Voraussetzungen
-Bevor du das Skript verwendest, stelle sicher, dass folgende Voraussetzungen erfüllt sind:
+2️⃣ Öffentlichen Schlüssel auf das Zielsystem übertragen
 
-✅ **Docker** ist installiert und läuft  
-✅ **SSH & SCP** sind auf dem Haupt- und Zielsystem verfügbar  
-✅ **Systemd** wird auf dem Hauptsystem genutzt  
-✅ **SSH-Key-Pair** wurde eingerichtet (siehe nächster Abschnitt)  
+```bash
 
----
+ssh-copy-id user@Ziel-IP
+Nach der Passworteingabe wird der Schlüssel hinterlegt.
 
-## ⚙️ Installation & Konfiguration
+3️⃣ SSH-Login testen
 
-### 📁 Dateien & Verzeichnisse
-| Datei/Verzeichnis        | Zweck |
-|--------------------------|------------------------------------------------|
-| `/root/backup_docker.sh` | Das eigentliche Backup-Skript |
-| `/etc/systemd/system/docker-backup.service` | Systemd Service-Datei für das Backup |
-| `/etc/systemd/system/docker-backup.timer` | Systemd Timer-Datei zur Automatisierung |
+```bash
 
-### 🔑 Berechtigungen setzen
-```
-bash
+ssh user@Ziel-IP
+Falls die Anmeldung ohne Passwort funktioniert, ist alles korrekt eingerichtet.
+
+📂 Datei- und Verzeichnisstruktur
+
+```bash
+
+/root/backup_docker.sh                  # Backup-Skript
+/etc/systemd/system/docker-backup.service  # Systemd Service
+/etc/systemd/system/docker-backup.timer    # Systemd Timer
+/opt/docker_backups/                      # Lokaler Backup-Speicherort
+
+🛠️ Installation und Nutzung
+
+1️⃣ Skript ausführbar machen
+
+```bash
+
 chmod +x /root/backup_docker.sh
-chown root:root /root/backup_docker.sh
-```
 
-## Systemd-Konfiguration neu laden
+2️⃣ Systemd Service und Timer einrichten
+D
+ie docker-backup.service und docker-backup.timer müssen unter /etc/systemd/system/ liegen und "root" gehören.
 
-´´´
+Nach dem Kopieren:
+
+```bash
+
 systemctl daemon-reload
-´´´
+systemctl enable docker-backup.timer
+systemctl start docker-backup.timer
 
-Passwortlosen SSH-Login einrichten
+
+3️⃣ Status überprüfen
+
+```bash
+
+systemctl status docker-backup.timer
+systemctl status docker-backup.service
+
+4️⃣ Manuelles Backup starten
+
+Falls du das Backup sofort ausführen möchtest:
+
+```bash
+
+systemctl start docker-backup.service
+
+🗑️ Alte Backups automatisch löschen
+Das Skript löscht alte Backups lokal und auf dem Zielserver. Die Anzahl der gespeicherten Backups kann in der Konfiguration angepasst werden.
+
+✅ Fazit
+Dieses Skript sorgt für eine einfache, automatisierte Sicherung deiner Docker-Volumes. Es kann per systemd gesteuert werden und unterstützt Remote-Backups über SCP.
+
+🚀 Viel Erfolg mit deinem Docker-Backup!

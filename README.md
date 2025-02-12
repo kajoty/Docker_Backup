@@ -10,27 +10,27 @@ SSH-Zugriff auf das Zielsystem für den Remote-Backup
 Damit das Skript ohne Benutzereingaben funktioniert, muss der SSH-Schlüssel vom Hauptsystem auf das Zielsystem kopiert werden.
 
 1️⃣ SSH-Schlüsselpaar erstellen (falls noch nicht vorhanden)
-```bash
+bash
 
 ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/id_rsa
 
 2️⃣ Öffentlichen Schlüssel auf das Zielsystem übertragen
 
-```bash
+bash
 
 ssh-copy-id user@Ziel-IP
 Nach der Passworteingabe wird der Schlüssel hinterlegt.
 
 3️⃣ SSH-Login testen
 
-```bash
+bash
 
 ssh user@Ziel-IP
 Falls die Anmeldung ohne Passwort funktioniert, ist alles korrekt eingerichtet.
 
 📂 Datei- und Verzeichnisstruktur
 
-```bash
+bash
 
 /root/backup_docker.sh                  # Backup-Skript
 /etc/systemd/system/docker-backup.service  # Systemd Service
@@ -41,7 +41,7 @@ Falls die Anmeldung ohne Passwort funktioniert, ist alles korrekt eingerichtet.
 
 1️⃣ Skript ausführbar machen
 
-```bash
+bash
 
 chmod +x /root/backup_docker.sh
 
@@ -51,7 +51,7 @@ ie docker-backup.service und docker-backup.timer müssen unter /etc/systemd/syst
 
 Nach dem Kopieren:
 
-```bash
+bash
 
 systemctl daemon-reload
 systemctl enable docker-backup.timer
@@ -60,7 +60,7 @@ systemctl start docker-backup.timer
 
 3️⃣ Status überprüfen
 
-```bash
+bash
 
 systemctl status docker-backup.timer
 systemctl status docker-backup.service
@@ -69,7 +69,7 @@ systemctl status docker-backup.service
 
 Falls du das Backup sofort ausführen möchtest:
 
-```bash
+bash
 
 systemctl start docker-backup.service
 

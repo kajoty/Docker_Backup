@@ -1,0 +1,16 @@
+{
+    "source_dir": "/var/lib/docker/volumes",
+    "backup_dir": "/opt/docker_backups",
+    "keep_backups": 10,
+    "remote": {
+      "user": "user",
+      "server": "192.168.178.101",
+      "dir": "/home/user/docker-backups"
+    },
+    "pushover": {
+      "enabled": false,
+      "token": "DEIN_PUSHOVER_APP_TOKEN",
+      "user": "DEIN_PUSHOVER_USER_KEY"
+    }
+  }
+  

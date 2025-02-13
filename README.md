@@ -1,83 +1,141 @@
-Docker Volume Backup Script
-Dieses Skript erstellt ein Backup von Docker-Volumes und speichert es lokal oder auf einem entfernten Server. Es kann automatisiert mit einem systemd Timer ausgeführt werden.
+# Docker Backup Script
 
-🔧 Voraussetzungen
-Ein Linux-System mit Docker installiert
-Ein Benutzer mit ausreichenden Berechtigungen
-SSH-Zugriff auf das Zielsystem für den Remote-Backup
+Dieses Bash-Script ermöglicht die automatische Sicherung aller Docker-Volumes. Das Backup wird lokal gespeichert und optional auf einen Remote-Server übertragen. Zusätzlich kann eine Pushover-Benachrichtigung über den Backup-Status versendet werden.
 
-🔑 SSH-Login ohne Passwort einrichten
-Damit das Skript ohne Benutzereingaben funktioniert, muss der SSH-Schlüssel vom Hauptsystem auf das Zielsystem kopiert werden.
+## Funktionen
+- Automatisches Stoppen und Neustarten aller Docker-Container während des Backups
+- Erstellung eines komprimierten Backup-Archivs (`tar.gz`)
+- Sicherung auf einem Remote-Server mittels `scp`
+- Automatische Löschung alter Backups (lokal und remote)
+- Fehlerbehandlung und Logging
+- **Automatische Ausführung mit systemd**
+- **Optionale Benachrichtigung per Pushover**
 
-1️⃣ SSH-Schlüsselpaar erstellen (falls noch nicht vorhanden)
+---
 
-```
-ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/id_rsa
-```
+## Installation & Einrichtung
 
-2️⃣ Öffentlichen Schlüssel auf das Zielsystem übertragen
-
-```
-ssh-copy-id user@Ziel-IP
-```
-
-Nach der Passworteingabe wird der Schlüssel hinterlegt.
-
-3️⃣ SSH-Login testen
-
-```
-ssh user@Ziel-IP
-```
-Falls die Anmeldung ohne Passwort funktioniert, ist alles korrekt eingerichtet.
-
-📂 Datei- und Verzeichnisstruktur
-
-```
-/root/backup_docker.sh                  # Backup-Skript
-/etc/systemd/system/docker-backup.service  # Systemd Service
-/etc/systemd/system/docker-backup.timer    # Systemd Timer
-/opt/docker_backups/                      # Lokaler Backup-Speicherort
+### 1. Abhängigkeiten installieren
+Folgende Programme müssen auf dem System installiert sein:
+```bash
+sudo apt update && sudo apt install -y jq docker.io openssh-client curl
 ```
 
-🛠️ Installation und Nutzung
-
-1️⃣ Skript ausführbar machen
-
-```
-chmod +x /root/backup_docker.sh
-```
-
-2️⃣ Systemd Service und Timer einrichten
-
-Die docker-backup.service und docker-backup.timer müssen unter /etc/systemd/system/ liegen und "root" gehören.
-
-Nach dem Kopieren:
-
-```
-systemctl daemon-reload
-systemctl enable docker-backup.timer
-systemctl start docker-backup.timer
-```
-
-3️⃣ Status überprüfen
-
-```
-systemctl status docker-backup.timer
-systemctl status docker-backup.service
+### 2. Konfigurationsdatei erstellen
+Erstelle eine `config.json` im gleichen Verzeichnis wie das Script und passe sie nach deinen Bedürfnissen an:
+```json
+{
+  "source_dir": "/var/lib/docker/volumes",
+  "backup_dir": "/opt/docker_backups",
+  "keep_backups": 10,
+  "remote": {
+    "user": "user",
+    "server": "192.168.178.101",
+    "dir": "/home/user/docker-backups"
+  },
+  "pushover": {
+    "enabled": true,
+    "token": "DEIN_PUSHOVER_APP_TOKEN",
+    "user": "DEIN_PUSHOVER_USER_KEY"
+  }
+}
 ```
 
-4️⃣ Manuelles Backup starten
-
-Falls du das Backup sofort ausführen möchtest:
-
+### 3. Script-Berechtigungen setzen
+Das Backup-Script sollte nur von `root` ausführbar sein:
+```bash
+sudo chown root:root /path/to/docker_backup.sh
+sudo chmod 700 /path/to/docker_backup.sh
 ```
-systemctl start docker-backup.service
+
+---
+
+## Manuelle Nutzung
+Das Script kann jederzeit manuell ausgeführt werden:
+```bash
+sudo /path/to/docker_backup.sh
 ```
 
-🗑️ Alte Backups automatisch löschen
-Das Skript löscht alte Backups lokal und auf dem Zielserver. Die Anzahl der gespeicherten Backups kann in der Konfiguration angepasst werden.
+---
 
-✅ Fazit
-Dieses Skript sorgt für eine einfache, automatisierte Sicherung deiner Docker-Volumes. Es kann per systemd gesteuert werden und unterstützt Remote-Backups über SCP.
+## Automatisierung mit systemd
+Damit das Backup regelmäßig automatisch läuft, kann systemd genutzt werden.
 
-🚀 Viel Erfolg mit deinem Docker-Backup!
+### 1. Systemd-Service erstellen
+Erstelle die Datei für den Service:
+```bash
+sudo nano /etc/systemd/system/docker_backup.service
+```
+
+Füge folgenden Inhalt ein:
+```ini
+[Unit]
+Description=Docker Backup Service
+Wants=docker_backup.timer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/path/to/docker_backup.sh
+User=root
+WorkingDirectory=/path/to/
+StandardOutput=append:/var/log/docker_backup.log
+StandardError=append:/var/log/docker_backup.log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 2. Systemd-Timer erstellen
+Erstelle die Datei für den Timer:
+```bash
+sudo nano /etc/systemd/system/docker_backup.timer
+```
+
+Füge folgenden Inhalt ein:
+```ini
+[Unit]
+Description=Timer for Docker Backup Service
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+### 3. Systemd-Timer aktivieren
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable docker_backup.timer
+sudo systemctl start docker_backup.timer
+```
+
+### 4. Timer-Status prüfen
+```bash
+systemctl list-timers --all
+```
+
+Falls du das Backup sofort testen möchtest:
+```bash
+sudo systemctl start docker_backup.service
+```
+
+---
+
+## Fehlerbehandlung
+Falls das Backup fehlschlägt, kannst du folgende Maßnahmen ergreifen:
+- Prüfe das Log-File `docker_backup.log`
+- Stelle sicher, dass die Konfigurationsdatei (`config.json`) korrekt ist
+- Überprüfe die Erreichbarkeit des Remote-Servers
+- Prüfe den Systemd-Status mit:
+  ```bash
+  sudo systemctl status docker_backup.service
+  ```
+
+---
+
+## Lizenz
+Dieses Script ist Open Source und unter der MIT-Lizenz verfügbar.
+

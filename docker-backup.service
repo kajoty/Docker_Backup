@@ -1,8 +1,15 @@
 [Unit]
-Description=Docker Volume Backup
+Description=Docker Backup Service
+Wants=docker_backup.timer
 After=network.target
 
 [Service]
-ExecStart=/root/backup_docker.sh
+Type=simple
+ExecStart=/path/to/docker_backup.sh
 User=root
-Type=oneshot
+WorkingDirectory=/path/to/
+StandardOutput=append:/var/log/docker_backup.log
+StandardError=append:/var/log/docker_backup.log
+
+[Install]
+WantedBy=multi-user.target
